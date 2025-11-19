@@ -2,13 +2,18 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, FileText, ArrowRight, TreePine, Map, Vote, Zap } from 'lucide-react';
+import { Sparkles, FileText, ArrowRight, TreePine, Map, Vote, Zap, X, Mail, UserCircle } from 'lucide-react';
 import WalletStatus from '@/components/WalletStatus';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useHedera } from '@/components/HederaProvider';
+import { getUserProfile } from '@/lib/supabase';
 
 export default function Options() {
   const router = useRouter();
+  const { address } = useHedera();
   const [isClient, setIsClient] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [hasProfile, setHasProfile] = useState(false);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
   const customCursorRef = useRef<HTMLDivElement>(null);
   const orb1Ref = useRef<HTMLDivElement>(null);
@@ -27,7 +32,32 @@ export default function Options() {
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    checkProfile();
+  }, [address]);
+
+  async function checkProfile() {
+    if (!address) return;
+
+    try {
+      const result = await getUserProfile(address);
+      if (result.success && result.data) {
+        // User has profile data
+        const profile = result.data;
+        if (profile.email && profile.address_line1) {
+          setHasProfile(true);
+        } else {
+          // Profile exists but missing required fields
+          setShowNotification(true);
+        }
+      } else {
+        // No profile exists
+        setShowNotification(true);
+      }
+    } catch (error) {
+      console.error('Error checking profile:', error);
+      setShowNotification(true);
+    }
+  }
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -60,9 +90,92 @@ export default function Options() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+
   return (
     <ProtectedRoute>
       <WalletStatus />
+
+      {/* Profile Notification Popup */}
+      {showNotification && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-md bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-emerald-500/30 shadow-2xl shadow-emerald-500/20 p-8 animate-slideUp">
+            {/* Close button */}
+            <button
+              onClick={() => setShowNotification(false)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-slate-700/50 rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Icon */}
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+              <Mail className="text-white" size={32} strokeWidth={2.5} />
+            </div>
+
+            {/* Title */}
+            <h2 className="text-2xl font-bold text-white text-center mb-3">
+              Complete Your Profile
+            </h2>
+
+            {/* Description */}
+            <p className="text-gray-300 text-center mb-6 leading-relaxed">
+              <span className="font-semibold text-emerald-400">Email and address</span> are required for:
+            </p>
+
+            {/* Benefits List */}
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Mail className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">Proposal Notifications</p>
+                  <p className="text-xs text-gray-400">Receive emails when new proposals are created</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Vote className="w-4 h-4 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">Voting Access</p>
+                  <p className="text-xs text-gray-400">Participate in DAO governance and decisions</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <TreePine className="w-4 h-4 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">Parks Near You</p>
+                  <p className="text-xs text-gray-400">Discover and interact with nearby parks</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => router.push('/profile')}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-lg transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <UserCircle size={20} />
+                Go to Profile
+              </button>
+
+              <button
+                onClick={() => setShowNotification(false)}
+                className="w-full py-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
+              >
+                Skip for now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-slate-950 relative overflow-hidden">
         {/* Animated Grid Background */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_110%)]"></div>

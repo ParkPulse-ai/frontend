@@ -12,6 +12,7 @@
     "@hashgraph/hedera-wallet-connect": "^1.5.1",
     "@hashgraph/proto": "^2.24.0",
     "@hashgraph/sdk": "^2.77.0",
+    "@supabase/supabase-js": "^2.83.0",
     "@types/mapbox-gl": "^3.4.1",
     "@walletconnect/modal": "^2.7.0",
     "@walletconnect/qrcode-modal": "^1.8.0",

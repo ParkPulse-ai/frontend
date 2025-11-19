@@ -24,10 +24,18 @@ export default function MapView({ parks, onParkClick, selectedParkId }: MapViewP
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
+    let isMounted = true; // Track if component is still mounted
+
     // Try to get user's location
     const initializeMap = (center: [number, number], zoom: number) => {
+      // Safety check: ensure component is mounted and container exists
+      if (!isMounted || !mapContainer.current) {
+        console.warn('Map container not available or component unmounted');
+        return;
+      }
+
       map.current = new mapboxgl.Map({
-        container: mapContainer.current!,
+        container: mapContainer.current,
         style: 'mapbox://styles/mapbox/satellite-v9',
         center,
         zoom,
@@ -42,7 +50,9 @@ export default function MapView({ parks, onParkClick, selectedParkId }: MapViewP
       );
 
       map.current.on('load', () => {
-        setIsMapLoaded(true);
+        if (isMounted) {
+          setIsMapLoaded(true);
+        }
       });
     };
 
@@ -51,14 +61,18 @@ export default function MapView({ parks, onParkClick, selectedParkId }: MapViewP
       navigator.geolocation.getCurrentPosition(
         (position) => {
           // User's location
-          initializeMap(
-            [position.coords.longitude, position.coords.latitude],
-            12
-          );
+          if (isMounted) {
+            initializeMap(
+              [position.coords.longitude, position.coords.latitude],
+              12
+            );
+          }
         },
         () => {
           // Fallback to default location
-          initializeMap([-98, 38.5], 4);
+          if (isMounted) {
+            initializeMap([-98, 38.5], 4);
+          }
         }
       );
     } else {
@@ -67,6 +81,7 @@ export default function MapView({ parks, onParkClick, selectedParkId }: MapViewP
     }
 
     return () => {
+      isMounted = false; // Mark as unmounted
       map.current?.remove();
       map.current = null;
     };

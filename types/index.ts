@@ -5,6 +5,7 @@ export interface Message {
   timestamp: Date;
   data?: any;
   action?: string;
+  showProfileButton?: boolean;
 }
 
 export interface ParkFeature {
@@ -29,6 +30,8 @@ export interface AgentResponse {
   sessionId: string;
   action: string;
   reply: string;
+  showProfileButton?: boolean;
+  hcsTopicId?: string;
   data?: {
     featureCollection?: ParkFeatureCollection;
     [key: string]: any;

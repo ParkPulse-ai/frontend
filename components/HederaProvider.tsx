@@ -7,6 +7,7 @@ import {
   disconnectWallet,
   WalletType
 } from '../lib/hedera-wallets';
+import { createInitialAccount } from '../lib/supabase';
 
 interface HederaContextType {
   address: string | null;
@@ -41,17 +42,37 @@ export default function HederaProvider({ children }: HederaProviderProps) {
   const network = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
 
   useEffect(() => {
-    // Check if already connected (HashPack via WalletConnect)
-    getCurrentWalletAddress(WalletType.HASHPACK).then((addr) => {
-      if (addr) {
-        setAddress(addr);
-        setIsConnected(true);
-        setWalletType(WalletType.HASHPACK);
+    // Try to restore wallet connection from localStorage
+    const restoreConnection = async () => {
+      try {
+        const savedWalletType = localStorage.getItem('hedera_wallet_type') as WalletType | null;
+
+        if (!savedWalletType) {
+          return;
+        }
+
+        // Try to get current address for saved wallet type
+        const addr = await getCurrentWalletAddress(savedWalletType);
+
+        if (addr) {
+          console.log('🔄 Restored wallet connection:', savedWalletType, addr);
+          setAddress(addr);
+          setIsConnected(true);
+          setWalletType(savedWalletType);
+
+          // Create initial account if it doesn't exist
+          await createInitialAccount(addr);
+        } else {
+          // No active session, clear saved wallet type
+          localStorage.removeItem('hedera_wallet_type');
+        }
+      } catch (error) {
+        console.log('Could not restore wallet connection:', error);
+        localStorage.removeItem('hedera_wallet_type');
       }
-    }).catch((error) => {
-      // HashPack not connected yet, this is expected
-      console.log('HashPack not connected on load');
-    });
+    };
+
+    restoreConnection();
   }, []);
 
   const connect = async (type: WalletType) => {
@@ -60,6 +81,14 @@ export default function HederaProvider({ children }: HederaProviderProps) {
       setAddress(result.address);
       setWalletType(result.type);
       setIsConnected(true);
+
+      // Save wallet type to localStorage for persistence
+      localStorage.setItem('hedera_wallet_type', result.type);
+
+      // Create initial account in Supabase when wallet connects
+      await createInitialAccount(result.address);
+
+      console.log('💾 Wallet connection saved:', result.type);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       throw error;
@@ -73,6 +102,11 @@ export default function HederaProvider({ children }: HederaProviderProps) {
     setAddress(null);
     setIsConnected(false);
     setWalletType(null);
+
+    // Clear saved wallet type from localStorage
+    localStorage.removeItem('hedera_wallet_type');
+
+    console.log('🗑️ Wallet connection cleared');
   };
 
   return (

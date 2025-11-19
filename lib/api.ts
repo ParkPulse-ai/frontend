@@ -5,7 +5,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 export async function sendAgentMessage(
   message: string,
   sessionId?: string,
-  selectedParkId?: string
+  selectedParkId?: string,
+  walletAddress?: string
 ): Promise<AgentResponse> {
   const response = await fetch(`${API_URL}/api/agent`, {
     method: 'POST',
@@ -16,6 +17,7 @@ export async function sendAgentMessage(
       message,
       sessionId,
       uiContext: selectedParkId ? { selectedParkId } : undefined,
+      walletAddress,
     }),
   });
 

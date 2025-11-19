@@ -8,7 +8,6 @@ import { getParksByZipcode } from '@/lib/api';
 import { ParkFeatureCollection } from '@/types';
 import CustomCursor from '@/components/CustomCursor';
 import WalletStatus from '@/components/WalletStatus';
-import UserRegistrationModal from '@/components/UserRegistrationModal';
 import { useHedera } from '@/components/HederaProvider';
 
 const MapView = dynamic(() => import('@/components/MapView'), {
@@ -28,9 +27,8 @@ const MemoizedMapView = memo(MapView);
 
 export default function Home() {
   const router = useRouter();
-  const { address, isConnected, connect } = useHedera();
+  const { isConnected, connect } = useHedera();
   const [isConnecting, setIsConnecting] = useState(false);
-  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [parks, setParks] = useState<ParkFeatureCollection | null>(null);
   const [loadingParks, setLoadingParks] = useState(false);
@@ -71,10 +69,10 @@ export default function Home() {
 
   useEffect(() => {
     if (isConnected && !isConnecting) {
-      // Show registration modal when wallet is connected
-      setShowRegistrationModal(true);
+      // Redirect to options page when wallet is connected
+      router.push('/options');
     }
-  }, [isConnected, isConnecting]);
+  }, [isConnected, isConnecting, router]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -117,56 +115,11 @@ export default function Home() {
     }
   };
 
-  const handleRegistrationSubmit = async (formData: {
-    name: string;
-    email: string;
-    address: string;
-    isGovEmployee: boolean;
-    inviteCode?: string;
-  }) => {
-    // Determine user type based on invite code
-    let userType = 'user';
-    if (formData.isGovEmployee && formData.inviteCode === '000000') {
-      userType = 'government_employee';
-    }
-
-    // Just log the data for now (not storing anywhere)
-    console.log('User registration data:', {
-      walletAddress: address,
-      name: formData.name,
-      email: formData.email,
-      address: formData.address,
-      userType: userType,
-      isGovEmployee: formData.isGovEmployee,
-      inviteCodeValid: formData.inviteCode === '000000',
-    });
-
-    // Show success message in console
-    if (userType === 'government_employee') {
-      console.log('✅ Successfully registered as Government Employee');
-    } else {
-      console.log('✅ Successfully registered as Regular User');
-    }
-
-    // Close modal and redirect to options page
-    setShowRegistrationModal(false);
-    router.push('/options');
-  };
 
   return (
     <>
       <CustomCursor />
       <WalletStatus />
-
-      {/* User Registration Modal */}
-      {address && (
-        <UserRegistrationModal
-          isOpen={showRegistrationModal}
-          onClose={() => setShowRegistrationModal(false)}
-          onSubmit={handleRegistrationSubmit}
-          walletAddress={address}
-        />
-      )}
 
       <div className="min-h-screen bg-slate-950 relative overflow-hidden">
         {/* Animated Grid Background */}

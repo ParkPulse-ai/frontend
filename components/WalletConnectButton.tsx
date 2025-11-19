@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useHedera } from './HederaProvider';
 import { WalletType } from '../lib/hedera-wallets';
 
 export default function WalletConnectButton() {
-  const { address, isConnected, connect, disconnect, walletType } = useHedera();
+  const router = useRouter();
+  const { address, isConnected, connect, disconnect } = useHedera();
   const [showWalletOptions, setShowWalletOptions] = useState(false);
 
   const handleConnect = async (type: WalletType) => {
@@ -18,10 +20,18 @@ export default function WalletConnectButton() {
     }
   };
 
+  const handleWalletClick = () => {
+    router.push('/profile');
+  };
+
   if (isConnected && address) {
     return (
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg">
+        <button
+          onClick={handleWalletClick}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+          title="Go to Profile"
+        >
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
           <span className="text-sm font-mono">
             {address.slice(0, 6)}...{address.slice(-4)}
@@ -29,7 +39,7 @@ export default function WalletConnectButton() {
           <span className="text-xs text-gray-400">
             (HashPack)
           </span>
-        </div>
+        </button>
         <button
           onClick={disconnect}
           className="px-4 py-2 text-sm text-red-400 hover:text-red-300 transition-colors"
@@ -73,7 +83,7 @@ export default function WalletConnectButton() {
 
           <div className="p-3 bg-gray-900 border-t border-gray-700">
             <p className="text-xs text-gray-500">
-              Don't have HashPack?{' '}
+              Don&apos;t have HashPack?{' '}
               <a
                 href="https://www.hashpack.app/"
                 target="_blank"

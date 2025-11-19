@@ -1,5 +1,6 @@
 import { Message } from '@/types';
-import { User, Sparkles } from 'lucide-react';
+import { User, Sparkles, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface ChatMessageProps {
   message: Message;
@@ -7,6 +8,11 @@ interface ChatMessageProps {
 
 export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const router = useRouter();
+
+  const handleGoToProfile = () => {
+    router.push('/profile');
+  };
 
   return (
     <div className={`flex gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-6 animate-fade-in group`}>
@@ -37,6 +43,17 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           <p className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere ${!isUser ? 'pl-2' : ''}`}>
             {message.content}
           </p>
+
+          {/* Show "Go to Profile" button if authorization is required */}
+          {!isUser && message.showProfileButton && (
+            <button
+              onClick={handleGoToProfile}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+            >
+              <span>Go to Profile</span>
+              <ArrowRight size={18} />
+            </button>
+          )}
         </div>
 
         <span className="text-xs text-emerald-400/60 mt-1.5 px-2 font-medium">

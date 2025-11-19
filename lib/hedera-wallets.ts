@@ -50,8 +50,10 @@ export async function initializeDAppConnector(): Promise<DAppConnector> {
     chainIds
   );
 
-  // Initialize the connector
+  // Initialize the connector - this will restore any existing sessions
   await dAppConnector.init({ logger: 'error' });
+
+  console.log('🔌 DAppConnector initialized');
 
   return dAppConnector;
 }
@@ -231,12 +233,18 @@ export async function getCurrentWalletAddress(walletType?: WalletType): Promise<
     }
   }
 
-  // For HashPack/Blade, check if connector has active session
-  if (dAppConnector) {
-    const sessions = dAppConnector.signers;
+  // For HashPack/Blade, initialize connector and check for active session
+  try {
+    const connector = await initializeDAppConnector();
+    const sessions = connector.signers;
+
     if (sessions && sessions.length > 0) {
-      return sessions[0].getAccountId().toString();
+      const address = sessions[0].getAccountId().toString();
+      console.log('✅ Found active session for:', walletType, address);
+      return address;
     }
+  } catch (error) {
+    console.log('No active session found for:', walletType);
   }
 
   return null;

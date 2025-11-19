@@ -8,6 +8,7 @@ import ChatInput from '@/components/ChatInput';
 import CustomCursor from '@/components/CustomCursor';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import WalletStatus from '@/components/WalletStatus';
+import { useHedera } from '@/components/HederaProvider';
 import { Message, ParkFeatureCollection } from '@/types';
 import { sendAgentMessage } from '@/lib/api';
 import { Sparkles, ArrowLeft } from 'lucide-react';
@@ -26,6 +27,7 @@ const MapView = dynamic(() => import('@/components/MapView'), {
 
 export default function Home() {
   const router = useRouter();
+  const { address } = useHedera();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -38,6 +40,7 @@ export default function Home() {
   const [selectedParkId, setSelectedParkId] = useState<string | null>(null);
   const [selectedParkName, setSelectedParkName] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [hcsTopicId, setHcsTopicId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatSectionRef = useRef<HTMLDivElement>(null);
@@ -98,11 +101,16 @@ export default function Home() {
       const response = await sendAgentMessage(
         messageText,
         sessionId || undefined,
-        selectedParkId || undefined
+        selectedParkId || undefined,
+        address || undefined
       );
 
       if (response.sessionId) {
         setSessionId(response.sessionId);
+      }
+
+      if (response.hcsTopicId) {
+        setHcsTopicId(response.hcsTopicId);
       }
 
       const assistantMessage: Message = {
@@ -112,6 +120,7 @@ export default function Home() {
         timestamp: new Date(),
         data: response.data,
         action: response.action,
+        showProfileButton: response.showProfileButton,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -204,11 +213,22 @@ export default function Home() {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
                 <Sparkles size={20} className="text-white" strokeWidth={2.5} />
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
                   AI Assistant
                 </h2>
                 <p className="text-xs text-emerald-400/70 font-medium">Powered by Gemini AI</p>
+                {hcsTopicId && (
+                  <a
+                    href={`https://hashscan.io/testnet/topic/${hcsTopicId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-teal-400/60 hover:text-teal-300 font-mono transition-colors inline-flex items-center gap-1 mt-0.5"
+                  >
+                    <span>HCS:</span>
+                    <span className="underline underline-offset-2">{hcsTopicId}</span>
+                  </a>
+                )}
               </div>
             </div>
           </div>
