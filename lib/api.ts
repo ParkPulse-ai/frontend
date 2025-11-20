@@ -57,3 +57,19 @@ export async function getParksByZipcode(zipcode: string) {
 
   return response.json();
 }
+
+// Hedera service URL for contract interactions
+const HEDERA_SERVICE_URL = process.env.NEXT_PUBLIC_HEDERA_SERVICE_URL || 'http://localhost:5000';
+
+/**
+ * Get donation progress for a proposal
+ */
+export async function getDonationProgress(proposalId: number) {
+  const response = await fetch(`${HEDERA_SERVICE_URL}/api/contract/donation-progress/${proposalId}`);
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch donation progress');
+  }
+
+  return response.json();
+}

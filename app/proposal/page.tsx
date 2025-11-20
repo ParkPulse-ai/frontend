@@ -1,28 +1,32 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ThumbsUp, ThumbsDown, Clock, CheckCircle2, XCircle, X, Loader2, TrendingDown, Users, Leaf } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, ThumbsDown, Clock, CheckCircle2, XCircle, X, Loader2, TrendingDown, Users, Leaf, DollarSign, Target, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useHedera } from '@/components/HederaProvider';
-import { getProposals, getProposalDetails } from '@/lib/api';
-import { voteOnProposal, hasUserVoted } from '@/lib/hedera-wallets';
+import { getProposals, getProposalDetails, getDonationProgress } from '@/lib/api';
+import { voteOnProposal, hasUserVoted, donateToProposal } from '@/lib/hedera-wallets';
 import CustomCursor from '@/components/CustomCursor';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import WalletStatus from '@/components/WalletStatus';
 
 type ProposalStatus = 'active' | 'passed' | 'rejected';
+type TabType = 'active' | 'accepted' | 'rejected';
 
 interface Proposal {
   id: number;
   parkName: string;
   parkId: string;
   description: string;
-  status: ProposalStatus | number; // Can be string or number (0=Active, 1=Accepted, 2=Declined)
+  status: ProposalStatus | number;
   yesVotes: number;
   noVotes: number;
   totalVotes: number;
   endDate: number;
   creator: string;
+  fundingGoal?: number;
+  totalFundsRaised?: number;
+  fundingEnabled?: boolean;
   environmentalData?: {
     ndviBefore: number;
     ndviAfter: number;
@@ -37,6 +41,12 @@ interface Proposal {
     seniors: number;
     totalAffectedPopulation: number;
   };
+}
+
+interface DonationProgress {
+  raised: number;
+  goal: number;
+  percentage: number;
 }
 
 // Convert numeric status from contract to string
@@ -55,6 +65,7 @@ const normalizeStatus = (status: ProposalStatus | number): ProposalStatus => {
 export default function ProposalPage() {
   const router = useRouter();
   const { address, isConnected } = useHedera();
+  const [activeTab, setActiveTab] = useState<TabType>('active');
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +74,12 @@ export default function ProposalPage() {
   const [checkingVoteStatus, setCheckingVoteStatus] = useState(false);
   const [voteSuccess, setVoteSuccess] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+
+  // Donation modal state
+  const [showDonateModal, setShowDonateModal] = useState(false);
+  const [donationAmount, setDonationAmount] = useState('');
+  const [donating, setDonating] = useState(false);
+  const [donationProgress, setDonationProgress] = useState<DonationProgress | null>(null);
 
   // Fetch proposals on mount
   useEffect(() => {
@@ -95,6 +112,22 @@ export default function ProposalPage() {
           const voted = await hasUserVoted(proposalId, address);
           setHasVoted(voted);
           setCheckingVoteStatus(false);
+        }
+
+        // Fetch donation progress if it's an accepted proposal
+        if (normalizeStatus(data.proposal.status) === 'passed') {
+          try {
+            const progress = await getDonationProgress(proposalId);
+            if (progress.success) {
+              setDonationProgress({
+                raised: progress.raised || 0,
+                goal: progress.goal || 0,
+                percentage: progress.percentage || 0
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching donation progress:', error);
+          }
         }
       }
     } catch (error) {
@@ -139,6 +172,55 @@ export default function ProposalPage() {
     }
   };
 
+  const handleDonate = async () => {
+    if (!selectedProposal || !donationAmount || parseFloat(donationAmount) <= 0) {
+      alert('Please enter a valid donation amount');
+      return;
+    }
+
+    setDonating(true);
+
+    try {
+      console.log(`Donating ${donationAmount} HBAR to proposal ${selectedProposal.id}`);
+
+      // Submit donation transaction to Hedera blockchain
+      const txId = await donateToProposal(selectedProposal.id, parseFloat(donationAmount));
+
+      console.log('Donation transaction successful:', txId);
+
+      // Show success notification
+      alert(`Successfully donated ${donationAmount} HBAR!\n\nTransaction ID: ${txId}`);
+
+      // Reset form
+      setDonationAmount('');
+      setShowDonateModal(false);
+
+      // Refresh donation progress
+      const progress = await getDonationProgress(selectedProposal.id);
+      if (progress.success) {
+        setDonationProgress({
+          raised: progress.raised || 0,
+          goal: progress.goal || 0,
+          percentage: progress.percentage || 0
+        });
+      }
+
+      // Refresh proposals after a delay
+      setTimeout(() => {
+        fetchProposals();
+      }, 2000);
+
+    } catch (error: any) {
+      console.error('Error donating:', error);
+
+      // Show user-friendly error message
+      const errorMessage = error?.message || 'Failed to process donation';
+      alert(`Donation failed: ${errorMessage}\n\nPlease make sure your wallet is connected and you have sufficient HBAR.`);
+    } finally {
+      setDonating(false);
+    }
+  };
+
   const getStatusColor = (status: ProposalStatus) => {
     switch (status) {
       case 'active':
@@ -160,6 +242,15 @@ export default function ProposalPage() {
         return <XCircle size={16} />;
     }
   };
+
+  // Filter proposals based on active tab
+  const filteredProposals = proposals.filter(proposal => {
+    const status = normalizeStatus(proposal.status);
+    if (activeTab === 'active') return status === 'active';
+    if (activeTab === 'accepted') return status === 'passed';
+    if (activeTab === 'rejected') return status === 'rejected';
+    return false;
+  });
 
   return (
     <ProtectedRoute>
@@ -187,29 +278,59 @@ export default function ProposalPage() {
           </p>
         </div>
 
-        {/* Stats Bar */}
-        {!loading && proposals.length > 0 && (
-          <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
-            <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl p-4 border border-emerald-500/30 shadow-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-400">{proposals.length}</div>
-                <div className="text-xs text-gray-400 mt-1">Total Proposals</div>
-              </div>
+        {/* Tabs */}
+        <div className="flex gap-2 justify-center mb-6">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === 'active'
+                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25'
+                : 'bg-slate-800/50 text-gray-400 hover:bg-slate-800 hover:text-gray-200'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Clock size={18} />
+              <span>Active</span>
+              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                {proposals.filter(p => normalizeStatus(p.status) === 'active').length}
+              </span>
             </div>
-            <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl p-4 border border-blue-500/30 shadow-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">{proposals.filter(p => normalizeStatus(p.status) === 'active').length}</div>
-                <div className="text-xs text-gray-400 mt-1">Active</div>
-              </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('accepted')}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === 'accepted'
+                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+                : 'bg-slate-800/50 text-gray-400 hover:bg-slate-800 hover:text-gray-200'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={18} />
+              <span>Accepted</span>
+              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                {proposals.filter(p => normalizeStatus(p.status) === 'passed').length}
+              </span>
             </div>
-            <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl p-4 border border-green-500/30 shadow-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">{proposals.filter(p => normalizeStatus(p.status) === 'passed').length}</div>
-                <div className="text-xs text-gray-400 mt-1">Passed</div>
-              </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('rejected')}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === 'rejected'
+                ? 'bg-red-500 text-white shadow-lg shadow-red-500/25'
+                : 'bg-slate-800/50 text-gray-400 hover:bg-slate-800 hover:text-gray-200'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <XCircle size={18} />
+              <span>Rejected</span>
+              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                {proposals.filter(p => normalizeStatus(p.status) === 'rejected').length}
+              </span>
             </div>
-          </div>
-        )}
+          </button>
+        </div>
       </div>
 
       {/* Proposals Grid */}
@@ -219,17 +340,17 @@ export default function ProposalPage() {
             <Loader2 className="animate-spin text-emerald-400 mb-4" size={56} />
             <p className="text-gray-400 font-medium">Loading proposals...</p>
           </div>
-        ) : proposals.length === 0 ? (
+        ) : filteredProposals.length === 0 ? (
           <div className="text-center py-32">
             <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Leaf size={40} className="text-emerald-400" />
             </div>
-            <p className="text-xl font-semibold text-gray-200 mb-2">No proposals found</p>
-            <p className="text-gray-400">Check back later for community proposals</p>
+            <p className="text-xl font-semibold text-gray-200 mb-2">No {activeTab} proposals found</p>
+            <p className="text-gray-400">Check back later or switch to another tab</p>
           </div>
         ) : (
           <div className="space-y-5">
-            {proposals.map((proposal) => {
+            {filteredProposals.map((proposal) => {
               const totalVotes = proposal.yesVotes + proposal.noVotes;
               const votePercentage = totalVotes > 0 ? (proposal.yesVotes / totalVotes) * 100 : 0;
               const totalPopulation = proposal.demographics
@@ -240,7 +361,7 @@ export default function ProposalPage() {
                 <div
                   key={proposal.id}
                   onClick={() => handleProposalClick(proposal.id)}
-                  className="group bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-slate-700 hover:border-emerald-400 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="group bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-slate-700 hover:border-emerald-400 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
                 >
                   {/* Header */}
                   <div className="flex justify-between items-start mb-4">
@@ -339,7 +460,7 @@ export default function ProposalPage() {
                       By {proposal.creator.substring(0, 8)}...{proposal.creator.substring(proposal.creator.length - 6)}
                     </span>
                     <span className="text-sm text-emerald-400 font-semibold group-hover:text-emerald-300">
-                      View Details & Vote →
+                      View Details {activeTab === 'accepted' ? '& Donate' : activeTab === 'active' ? '& Vote' : ''} →
                     </span>
                   </div>
                 </div>
@@ -372,6 +493,54 @@ export default function ProposalPage() {
               <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">Description</h3>
               <p className="text-gray-300 leading-relaxed">{selectedProposal.description}</p>
             </div>
+
+            {/* Fundraising Section for Accepted Proposals */}
+            {normalizeStatus(selectedProposal.status) === 'passed' && donationProgress && (
+              <div className="mb-6 bg-gradient-to-br from-emerald-900/30 to-teal-900/30 border-2 border-emerald-500/30 rounded-xl p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Target size={24} className="text-emerald-400" />
+                  <h3 className="text-xl font-bold text-emerald-400">Support This Proposal</h3>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-300 font-semibold">
+                      <DollarSign size={14} className="inline" />
+                      {donationProgress.raised.toFixed(2)} HBAR raised
+                    </span>
+                    <span className="text-gray-400">
+                      Goal: {donationProgress.goal > 0 ? `${donationProgress.goal.toFixed(2)} HBAR` : 'Not set'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-700/50 rounded-full h-6 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-emerald-500 to-teal-500 h-6 rounded-full transition-all duration-500 flex items-center justify-center"
+                      style={{width: `${Math.min(donationProgress.percentage, 100)}%`}}
+                    >
+                      {donationProgress.percentage > 10 && (
+                        <span className="text-xs font-bold text-white">{donationProgress.percentage.toFixed(0)}%</span>
+                      )}
+                    </div>
+                  </div>
+                  {donationProgress.percentage < 10 && donationProgress.percentage > 0 && (
+                    <p className="text-xs text-emerald-400/70 mt-1 text-center">{donationProgress.percentage.toFixed(1)}% funded</p>
+                  )}
+                </div>
+
+                {/* Donate Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDonateModal(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  <TrendingUp size={20} />
+                  Donate to This Proposal
+                </button>
+              </div>
+            )}
 
             {/* Environmental Data */}
             {selectedProposal.environmentalData && (
@@ -543,6 +712,75 @@ export default function ProposalPage() {
               </div>
               <div className="mt-1">Creator: {selectedProposal.creator}</div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Donate Modal */}
+      {showDonateModal && selectedProposal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60]" onClick={() => setShowDonateModal(false)}>
+          <div className="bg-slate-900 border-2 border-emerald-500/50 rounded-2xl p-8 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-emerald-400 mb-1">Support This Proposal</h3>
+                <p className="text-sm text-gray-400">{selectedProposal.parkName}</p>
+              </div>
+              <button onClick={() => setShowDonateModal(false)} className="text-gray-400 hover:text-gray-200">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Donation Amount (HBAR)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={donationAmount}
+                  onChange={(e) => setDonationAmount(e.target.value)}
+                  placeholder="Enter amount (e.g. 10)"
+                  className="w-full px-4 py-3 bg-slate-800 border-2 border-slate-700 focus:border-emerald-500 rounded-xl text-white placeholder-gray-500 outline-none transition-all"
+                  disabled={donating}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">
+                  HBAR
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDonateModal(false)}
+                disabled={donating}
+                className="flex-1 px-6 py-3 bg-slate-800 text-gray-300 rounded-xl font-semibold hover:bg-slate-700 transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDonate}
+                disabled={donating || !donationAmount || parseFloat(donationAmount) <= 0}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {donating ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <DollarSign size={20} />
+                    Donate
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 mt-4 text-center">
+              Your wallet will open to approve the transaction
+            </p>
           </div>
         </div>
       )}

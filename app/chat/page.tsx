@@ -209,13 +209,13 @@ export default function Home() {
         {/* Chat Section */}
         <div ref={chatSectionRef} className="w-[40%] flex flex-col bg-slate-900/80 backdrop-blur-sm border-l border-slate-700 shadow-xl">
           <div className="p-6 border-b border-slate-700 bg-slate-900/90 backdrop-blur-sm">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3 mb-0">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
                 <Sparkles size={20} className="text-white" strokeWidth={2.5} />
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                  AI Assistant
+                  AI Planner
                 </h2>
                 <p className="text-xs text-emerald-400/70 font-medium">Powered by Gemini AI</p>
                 {hcsTopicId && (
@@ -223,10 +223,9 @@ export default function Home() {
                     href={`https://hashscan.io/testnet/topic/${hcsTopicId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] text-teal-400/60 hover:text-teal-300 font-mono transition-colors inline-flex items-center gap-1 mt-0.5"
+                    className="text-teal-400/60 hover:text-teal-300 font-mono transition-colors inline-flex items-center gap-1 mt-0.5"
                   >
-                    <span>HCS:</span>
-                    <span className="underline underline-offset-2">{hcsTopicId}</span>
+                    <span className="text-xs mr-1">Topic ID - {hcsTopicId}</span>
                   </a>
                 )}
               </div>

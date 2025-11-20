@@ -10,10 +10,11 @@ import { getUserProfile } from '@/lib/supabase';
 
 export default function Options() {
   const router = useRouter();
-  const { address } = useHedera();
+  const { address, isConnected } = useHedera();
   const [isClient, setIsClient] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
+  const [isGovernmentEmployee, setIsGovernmentEmployee] = useState(false);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
   const customCursorRef = useRef<HTMLDivElement>(null);
   const orb1Ref = useRef<HTMLDivElement>(null);
@@ -33,7 +34,30 @@ export default function Options() {
   useEffect(() => {
     setIsClient(true);
     checkProfile();
-  }, [address]);
+    checkGovernmentAccess();
+  }, [address, isConnected]);
+
+  async function checkGovernmentAccess() {
+    if (!isConnected || !address) {
+      setIsGovernmentEmployee(false);
+      return;
+    }
+
+    try {
+      // Check user profile in Supabase for government employee status
+      const result = await getUserProfile(address);
+
+      if (result.success && result.data) {
+        const isGovEmployee = result.data.is_government_employee === true;
+        setIsGovernmentEmployee(isGovEmployee);
+      } else {
+        setIsGovernmentEmployee(false);
+      }
+    } catch (error) {
+      console.error('Error checking government access:', error);
+      setIsGovernmentEmployee(false);
+    }
+  }
 
   async function checkProfile() {
     if (!address) return;
@@ -373,15 +397,28 @@ export default function Options() {
               </button>
             </div>
 
-            {/* Back to Home Link */}
+            {/* Admin Dashboard / Back to Home Link */}
             <div className="text-center mt-6">
-              <button
-                onClick={() => router.push('/')}
-                className="inline-flex items-center gap-2 px-6 py-3 text-gray-400 hover:text-emerald-400 transition-colors font-medium"
-              >
-                <ArrowRight size={20} className="rotate-180" />
-                <span>Back to Home</span>
-              </button>
+              {isGovernmentEmployee ? (
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 hover:border-orange-400/50 text-orange-400 hover:text-orange-300 transition-all font-semibold rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  <span>Admin Dashboard</span>
+                  <ArrowRight size={20} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push('/')}
+                  className="inline-flex items-center gap-2 px-6 py-3 text-gray-400 hover:text-emerald-400 transition-colors font-medium"
+                >
+                  <ArrowRight size={20} className="rotate-180" />
+                  <span>Back to Home</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

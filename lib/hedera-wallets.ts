@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { DAppConnector, HederaSessionEvent, HederaJsonRpcMethod, HederaChainId } from '@hashgraph/hedera-wallet-connect';
-import { LedgerId } from '@hashgraph/sdk';
+import { LedgerId, ContractExecuteTransaction, ContractFunctionParameters, ContractId, Hbar } from '@hashgraph/sdk';
 
 // Hedera configuration
 const HEDERA_NETWORK = process.env.NEXT_PUBLIC_HEDERA_NETWORK || 'testnet';
@@ -252,45 +252,69 @@ export async function getCurrentWalletAddress(walletType?: WalletType): Promise<
 
 /**
  * Vote on proposal - works with HashPack wallet (default)
+ * Opens wallet for user to approve the transaction
  */
 export async function voteOnProposal(
   proposalId: number,
   vote: 'yes' | 'no'
 ): Promise<string> {
-  let userAddress: string;
-
-  // HashPack wallet
+  // Check wallet connection
   if (!dAppConnector) {
-    throw new Error('HashPack wallet not connected. Please connect your wallet first.');
+    throw new Error('Wallet not connected. Please connect your wallet first.');
   }
 
   const signers = dAppConnector.signers;
   if (!signers || signers.length === 0) {
-    throw new Error('No active HashPack session. Please reconnect your wallet.');
+    throw new Error('No active wallet session. Please reconnect your wallet.');
   }
 
-  userAddress = signers[0].getAccountId().toString();
+  const signer = signers[0];
+  const userAddress = signer.getAccountId().toString();
 
-  // Call Hedera service to submit vote
-  const response = await fetch(`${HEDERA_SERVICE_URL}/api/contract/vote`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      proposalId,
-      vote: vote === 'yes',
-      voter: userAddress,
-    }),
-  });
-
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to submit vote');
+  // Get contract address from environment
+  const contractIdStr = process.env.NEXT_PUBLIC_HEDERA_CONTRACT_ID;
+  if (!contractIdStr) {
+    throw new Error('Contract ID not configured');
   }
 
-  return result.transactionId;
+  try {
+    console.log(`Submitting vote: ${vote} for proposal ${proposalId}`);
+    console.log(`User address: ${userAddress}`);
+
+    // Convert voter address to EVM format for contract parameter
+    const voterEvmAddress = userAddress.startsWith('0.0.')
+      ? '0x' + Buffer.from(userAddress.split('.')[2]).toString('hex').padStart(40, '0')
+      : userAddress;
+
+    // Create contract execute transaction
+    // This will trigger the wallet to open for user approval
+    const contractExecTx = await new ContractExecuteTransaction()
+      .setContractId(ContractId.fromString(contractIdStr))
+      .setGas(1000000)
+      .setFunction('vote', new ContractFunctionParameters()
+        .addUint64(proposalId)
+        .addBool(vote === 'yes')
+        .addAddress(voterEvmAddress)
+      )
+      .freezeWithSigner(signer); // Freeze the transaction with signer
+
+    // Execute through wallet signer - this opens the wallet for approval
+    const txResponse = await contractExecTx.executeWithSigner(signer);
+
+    // Wait for receipt
+    const receipt = await txResponse.getReceiptWithSigner(signer);
+
+    const transactionId = txResponse.transactionId.toString();
+
+    console.log('✅ Vote transaction successful:', transactionId);
+    console.log('Receipt status:', receipt.status.toString());
+
+    return transactionId;
+
+  } catch (error: any) {
+    console.error('❌ Voting transaction failed:', error);
+    throw new Error(error?.message || 'Failed to submit vote through wallet');
+  }
 }
 
 /**
@@ -307,6 +331,124 @@ export async function hasUserVoted(proposalId: number, userAddress: string): Pro
   } catch (error) {
     console.error('Error checking if user has voted:', error);
     return false;
+  }
+}
+
+/**
+ * Donate to proposal - works with connected wallet
+ * Opens wallet for user to approve the transaction
+ */
+export async function donateToProposal(
+  proposalId: number,
+  amount: number
+): Promise<string> {
+  // Check if wallet is connected
+  if (!dAppConnector) {
+    throw new Error('Wallet not connected. Please connect your wallet first.');
+  }
+
+  const signers = dAppConnector.signers;
+  if (!signers || signers.length === 0) {
+    throw new Error('No active wallet session. Please reconnect your wallet.');
+  }
+
+  const signer = signers[0];
+  const userAddress = signer.getAccountId().toString();
+
+  // Get contract address from environment
+  const contractIdStr = process.env.NEXT_PUBLIC_HEDERA_CONTRACT_ID;
+  if (!contractIdStr) {
+    throw new Error('Contract ID not configured');
+  }
+
+  try {
+    console.log(`Donating ${amount} HBAR to proposal ${proposalId}`);
+    console.log(`User address: ${userAddress}`);
+
+    // Create contract execute transaction with payable amount
+    // This will trigger the wallet to open for user approval
+    const contractExecTx = await new ContractExecuteTransaction()
+      .setContractId(ContractId.fromString(contractIdStr))
+      .setGas(1000000)
+      .setPayableAmount(new Hbar(amount)) // Send HBAR with the transaction
+      .setFunction('donateToProposal', new ContractFunctionParameters()
+        .addUint64(proposalId)
+      )
+      .freezeWithSigner(signer); // Freeze the transaction with signer
+
+    // Execute through wallet signer - this opens the wallet for approval
+    const txResponse = await contractExecTx.executeWithSigner(signer);
+
+    // Wait for receipt
+    const receipt = await txResponse.getReceiptWithSigner(signer);
+
+    const transactionId = txResponse.transactionId.toString();
+
+    console.log('✅ Donation transaction successful:', transactionId);
+    console.log('Receipt status:', receipt.status.toString());
+
+    return transactionId;
+
+  } catch (error: any) {
+    console.error('❌ Donation transaction failed:', error);
+    throw new Error(error?.message || 'Failed to process donation through wallet');
+  }
+}
+
+/**
+ * Close proposal - works with connected wallet
+ * Opens wallet for user to approve the transaction
+ */
+export async function closeProposal(proposalId: number): Promise<string> {
+  // Check if wallet is connected
+  if (!dAppConnector) {
+    throw new Error('Wallet not connected. Please connect your wallet first.');
+  }
+
+  const signers = dAppConnector.signers;
+  if (!signers || signers.length === 0) {
+    throw new Error('No active wallet session. Please reconnect your wallet.');
+  }
+
+  const signer = signers[0];
+  const userAddress = signer.getAccountId().toString();
+
+  // Get contract address from environment
+  const contractIdStr = process.env.NEXT_PUBLIC_HEDERA_CONTRACT_ID;
+  if (!contractIdStr) {
+    throw new Error('Contract ID not configured');
+  }
+
+  try {
+    console.log(`Closing proposal ${proposalId}`);
+    console.log(`User address: ${userAddress}`);
+
+    // Create contract execute transaction
+    // This will trigger the wallet to open for user approval
+    const contractExecTx = await new ContractExecuteTransaction()
+      .setContractId(ContractId.fromString(contractIdStr))
+      .setGas(1000000)
+      .setFunction('closeProposal', new ContractFunctionParameters()
+        .addUint64(proposalId)
+      )
+      .freezeWithSigner(signer); // Freeze the transaction with signer
+
+    // Execute through wallet signer - this opens the wallet for approval
+    const txResponse = await contractExecTx.executeWithSigner(signer);
+
+    // Wait for receipt
+    const receipt = await txResponse.getReceiptWithSigner(signer);
+
+    const transactionId = txResponse.transactionId.toString();
+
+    console.log('✅ Close proposal transaction successful:', transactionId);
+    console.log('Receipt status:', receipt.status.toString());
+
+    return transactionId;
+
+  } catch (error: any) {
+    console.error('❌ Close proposal transaction failed:', error);
+    throw new Error(error?.message || 'Failed to close proposal through wallet');
   }
 }
 
