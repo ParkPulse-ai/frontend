@@ -80,6 +80,9 @@ export default function ProposalPage() {
   const [donationAmount, setDonationAmount] = useState('');
   const [donating, setDonating] = useState(false);
   const [donationProgress, setDonationProgress] = useState<DonationProgress | null>(null);
+  const [showDonationResultModal, setShowDonationResultModal] = useState(false);
+  const [donationResult, setDonationResult] = useState({ success: false, message: '', txId: '', amount: '' });
+  const [paymentMethod, setPaymentMethod] = useState<'hbar' | 'usdc' | 'card'>('hbar');
 
   // Fetch proposals on mount
   useEffect(() => {
@@ -174,11 +177,18 @@ export default function ProposalPage() {
 
   const handleDonate = async () => {
     if (!selectedProposal || !donationAmount || parseFloat(donationAmount) <= 0) {
-      alert('Please enter a valid donation amount');
+      setDonationResult({
+        success: false,
+        message: 'Please enter a valid donation amount',
+        txId: '',
+        amount: ''
+      });
+      setShowDonationResultModal(true);
       return;
     }
 
     setDonating(true);
+    setShowDonateModal(false);
 
     try {
       console.log(`Donating ${donationAmount} HBAR to proposal ${selectedProposal.id}`);
@@ -188,12 +198,17 @@ export default function ProposalPage() {
 
       console.log('Donation transaction successful:', txId);
 
-      // Show success notification
-      alert(`Successfully donated ${donationAmount} HBAR!\n\nTransaction ID: ${txId}`);
+      // Show success modal
+      setDonationResult({
+        success: true,
+        message: 'Your donation has been successfully processed!',
+        txId: txId,
+        amount: donationAmount
+      });
+      setShowDonationResultModal(true);
 
       // Reset form
       setDonationAmount('');
-      setShowDonateModal(false);
 
       // Refresh donation progress
       const progress = await getDonationProgress(selectedProposal.id);
@@ -213,9 +228,15 @@ export default function ProposalPage() {
     } catch (error: any) {
       console.error('Error donating:', error);
 
-      // Show user-friendly error message
+      // Show error modal
       const errorMessage = error?.message || 'Failed to process donation';
-      alert(`Donation failed: ${errorMessage}\n\nPlease make sure your wallet is connected and you have sufficient HBAR.`);
+      setDonationResult({
+        success: false,
+        message: `Donation failed: ${errorMessage}. Please make sure your wallet is connected and you have sufficient HBAR.`,
+        txId: '',
+        amount: donationAmount
+      });
+      setShowDonationResultModal(true);
     } finally {
       setDonating(false);
     }
@@ -730,9 +751,56 @@ export default function ProposalPage() {
               </button>
             </div>
 
+            {/* Payment Method Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-300 mb-3">
+                Payment Method
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {/* HBAR - Active */}
+                <button
+                  onClick={() => setPaymentMethod('hbar')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    paymentMethod === 'hbar'
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                      : 'bg-slate-800 border-slate-700 text-gray-400 hover:border-slate-600'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">ℏ</div>
+                    <div className="text-xs font-semibold">HBAR</div>
+                  </div>
+                </button>
+
+                {/* USDC - Disabled */}
+                <button
+                  disabled
+                  className="p-4 rounded-xl border-2 bg-slate-800/50 border-slate-700/50 text-gray-600 cursor-not-allowed opacity-50"
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">$</div>
+                    <div className="text-xs font-semibold">USDC</div>
+                    <div className="text-[10px] mt-1">Coming Soon</div>
+                  </div>
+                </button>
+
+                {/* Debit Card - Disabled */}
+                <button
+                  disabled
+                  className="p-4 rounded-xl border-2 bg-slate-800/50 border-slate-700/50 text-gray-600 cursor-not-allowed opacity-50"
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">💳</div>
+                    <div className="text-xs font-semibold">Card</div>
+                    <div className="text-[10px] mt-1">Coming Soon</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <div className="mb-6">
               <label className="block text-sm font-semibold text-gray-300 mb-2">
-                Donation Amount (HBAR)
+                Donation Amount ({paymentMethod === 'hbar' ? 'HBAR' : paymentMethod === 'usdc' ? 'USDC' : 'USD'})
               </label>
               <div className="relative">
                 <input
@@ -746,7 +814,7 @@ export default function ProposalPage() {
                   disabled={donating}
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">
-                  HBAR
+                  {paymentMethod === 'hbar' ? 'HBAR' : paymentMethod === 'usdc' ? 'USDC' : 'USD'}
                 </span>
               </div>
             </div>
@@ -781,6 +849,60 @@ export default function ProposalPage() {
             <p className="text-xs text-gray-500 mt-4 text-center">
               Your wallet will open to approve the transaction
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Donation Result Modal */}
+      {showDonationResultModal && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60]"
+          onClick={() => setShowDonationResultModal(false)}
+        >
+          <div
+            className={`bg-slate-900 border-2 ${donationResult.success ? 'border-green-500/30' : 'border-red-500/30'} rounded-2xl max-w-lg w-full shadow-2xl`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-12 h-12 ${donationResult.success ? 'bg-green-500/20' : 'bg-red-500/20'} rounded-full flex items-center justify-center`}>
+                  {donationResult.success ? (
+                    <CheckCircle2 size={24} className="text-green-400" />
+                  ) : (
+                    <XCircle size={24} className="text-red-400" />
+                  )}
+                </div>
+                <h2 className={`text-2xl font-bold ${donationResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                  {donationResult.success ? 'Donation Successful!' : 'Donation Failed'}
+                </h2>
+              </div>
+
+              <p className="text-gray-300 mb-4">{donationResult.message}</p>
+
+              {donationResult.success && donationResult.amount && (
+                <div className="bg-slate-800/50 rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-400">Amount Donated:</span>
+                    <span className="text-emerald-400 font-bold text-lg">{donationResult.amount} HBAR</span>
+                  </div>
+                  {donationResult.txId && (
+                    <>
+                      <div className="border-t border-slate-700 pt-2 mt-2">
+                        <div className="text-sm text-gray-400 mb-1">Transaction ID:</div>
+                        <div className="text-emerald-400 font-mono text-xs break-all">{donationResult.txId}</div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <button
+                onClick={() => setShowDonationResultModal(false)}
+                className={`w-full px-4 py-3 ${donationResult.success ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white rounded-xl font-semibold transition-all`}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

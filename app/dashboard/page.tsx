@@ -299,17 +299,18 @@ export default function DashboardPage() {
           <div className="absolute w-[400px] h-[400px] rounded-full bg-orange-500/15 blur-[90px] animate-float-slow" style={{ top: '40%', left: '50%' }}></div>
         </div>
 
+        {/* Back Button */}
+        <button
+          onClick={() => router.push('/')}
+          className="absolute top-6 left-6 z-20 group flex items-center gap-2 px-5 py-2.5 bg-slate-800/90 backdrop-blur-md text-gray-300 hover:text-white rounded-full border-2 border-emerald-500/30 hover:border-emerald-400 shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-600"
+        >
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform duration-300" strokeWidth={2.5} />
+          <span className="font-semibold text-sm">Back</span>
+        </button>
+
         <div className="relative z-10">
         {/* Header */}
-        <div className="max-w-7xl mx-auto mb-8">
-          <button
-            onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-gray-400 hover:text-emerald-400 transition-all mb-6 group"
-          >
-            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back to Home</span>
-          </button>
-
+        <div className="max-w-7xl mx-auto mb-8 pt-20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/25">
