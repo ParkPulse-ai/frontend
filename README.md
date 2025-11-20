@@ -1,504 +1,392 @@
-# ParkPulse.ai
+# ParkPulse Frontend
 
-**A decentralized community-driven platform for Urban City Planning on Flow Blockchain**
-
-![Flow Blockchain](https://img.shields.io/badge/Built%20on-Flow%20Blockchain-00EF8B?style=for-the-badge&logo=flow)
-![Network](https://img.shields.io/badge/Network-Testnet-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+**Next.js frontend application for ParkPulse.ai - Community-driven park protection platform**
 
 ---
 
-## 🚀 Deployed on Flow Blockchain Testnet
+## 🔗 Hedera Contract Information
 
-### Contract Details
-
-| Contract Name | Contract Address | Explorer Link |
-|--------------|------------------|---------------|
-| **ParkPulseCommunity** | `0xd63bdc807b56f6a5` | [View on FlowScan](https://testnet.flowscan.io/contract/A.d63bdc807b56f6a5.ParkPulseCommunity) |
-
-**Network:** Flow Testnet
-**Contract Address:** `0xd63bdc807b56f6a5`
-**View on Explorer:** https://testnet.flowscan.io/contract/A.d63bdc807b56f6a5.ParkPulseCommunity
-
-### Contract Capabilities
-- Create park protection proposals with environmental data
-- Cast votes (yes/no) on active proposals
-- Track voting results with demographic impact analysis
-- Automatic proposal status management
-- Event emission for transparency
-
----
-
-## 🌊 Why Flow Blockchain?
-
-ParkPulse is built on **Flow Blockchain (Testnet)** for several compelling reasons:
-
-### 1. **Resource-Oriented Programming with Cadence**
-Flow's Cadence language provides unique safety guarantees perfect for voting systems:
-- **No reentrancy attacks** - Built-in protection against common smart contract vulnerabilities
-- **Static typing** - Catches errors at compile time, critical for governance contracts
-- **Resource safety** - Prevents double-voting and ensures vote integrity
-
-### 2. **User Experience First**
-- **Human-readable transactions** - Voters can see exactly what they're signing
-- **Low transaction costs** - Makes community voting accessible to everyone
-- **Fast finality** - Quick vote confirmations without waiting
-
-### 3. **Scalability**
-- **Multi-node architecture** - Separates consensus, execution, and verification
-- **No gas wars** - Predictable costs for community proposals
-- **Future-proof** - Can scale as the platform grows to multiple cities
-
-### 4. **Developer Experience**
-- **Excellent tooling** - Flow CLI, emulator, and comprehensive documentation
-- **Python & JavaScript SDKs** - Easy integration with web applications
-- **Active community** - Strong support and growing ecosystem
-
-### 5. **Environmental Mission Alignment**
-- **Energy efficient** - Proof-of-Stake consensus aligns with environmental values
-- **Sustainable infrastructure** - Lower carbon footprint than alternatives
+| Property | Value |
+|----------|-------|
+| **Contract Name** | ParkPulseCommunity |
+| **Contract ID** | `0.0.7298075` |
+| **HCS Topic ID** | `0.0.7284567` |
+| **Network** | Hedera Testnet |
+| **Explorer** | [View on HashScan](https://hashscan.io/testnet/contract/0.0.7298075) |
 
 ---
 
 ## 📖 Overview
 
-**ParkPulse.ai** is a decentralized platform that empowers communities to protect public parks through transparent, blockchain-based voting. When a park faces threats like commercial development or removal, ParkPulse enables citizens to create proposals, analyze environmental impact, and vote on protective measures.
+ParkPulse is a decentralized platform that empowers communities to protect public parks through transparent, blockchain-based voting. Built on Hedera Hashgraph for fast, secure, and low-cost transactions.
 
-The platform combines:
-- **AI-powered environmental analysis** (NDVI vegetation indices, PM2.5 air quality)
-- **Demographic impact assessment** (affected populations)
-- **Decentralized governance** via Flow blockchain smart contracts
-- **Transparent voting** with immutable on-chain records
+### Key Features
 
-### Key Use Cases
-- Protect parks from commercial development
-- Community-driven conservation decisions
-- Evidence-based environmental advocacy
-- Transparent democratic processes for urban planning
+- 🗳️ **Decentralized Voting**: Community-driven proposals and voting
+- 🌳 **Environmental Impact**: AI-powered NDVI and air quality analysis
+- 🗺️ **Interactive Maps**: Mapbox-powered park visualization
+- 💰 **Crowdfunding**: Support accepted proposals with HBAR donations
+- 📊 **Real-time Data**: Live proposal updates from blockchain
+- 🔐 **Wallet Integration**: MetaMask and WalletConnect support
 
 ---
 
-## Table of Contents
-- [Deployed on Flow Blockchain Testnet](#-deployed-on-flow-blockchain-testnet)
-- [Why Flow Blockchain?](#-why-flow-blockchain)
-- [Overview](#-overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Technology Stack](#technology-stack)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [Demo & Resources](#demo--resources)
-- [Contributing](#contributing)
-- [License](#license)
+## 🏗️ Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Maps**: Mapbox GL JS
+- **Blockchain**: Hedera Hashgraph
+- **Backend API**: FastAPI (Python)
+- **Database**: Supabase (PostgreSQL)
 
 ---
 
-## Features
+## ⚙️ Prerequisites
 
-### For Citizens
-- **Create Proposals** - Submit park protection proposals with AI-generated impact analysis
-- **Vote on Issues** - Cast votes on proposals affecting your community
-- **View Impact Data** - See environmental and demographic impact before voting
-- **Track Results** - Real-time voting results stored immutably on-chain
-
-### Environmental Analysis
-- **NDVI Analysis** - Vegetation health tracking using satellite imagery
-- **Air Quality Monitoring** - PM2.5 levels before/after park removal scenarios
-- **Impact Prediction** - AI-powered analysis of park removal consequences
-
-### Blockchain Features
-- **Decentralized Voting** - No central authority can manipulate results
-- **Immutable Records** - All votes permanently recorded on Flow blockchain
-- **Transparent Process** - Anyone can verify voting integrity
-- **Smart Contract Automation** - Automatic proposal status updates
+- **Node.js**: v18.0.0 or higher
+- **npm**: v8.0.0 or higher
+- **Hedera Service**: Running on port 5000
+- **Backend API**: Running on port 4000
 
 ---
 
-## Architecture
+## 🚀 Quick Start
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     ParkPulse.ai Platform                    │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────────┐    ┌─────────────┐
-│   Frontend   │    │     Backend      │    │Flow Testnet │
-│  (Next.js)   │◄───┤  (Python/FastAPI)│◄───┤  Blockchain │
-│              │    │                  │    │             │
-│ - React UI   │    │ - Flow SDK       │    │ Community   │
-│ - Flow SDK   │    │ - AI Analysis    │    │ Voting      │
-│ - Mapbox     │    │ - GEE API        │    │ Contract    │
-│ - Voting     │    │ - PostgreSQL     │    │ 0xd63b...   │
-└──────────────┘    └──────────────────┘    └─────────────┘
-```
+### 1. Install Dependencies
 
-### Data Flow
-1. **User Action** - Citizen interacts with frontend (create proposal/vote)
-2. **Backend Processing** - AI analyzes environmental impact via Google Earth Engine
-3. **Blockchain Transaction** - Data submitted to Flow smart contract
-4. **On-Chain Storage** - Proposal/vote recorded immutably
-5. **Event Emission** - Contract emits events for transparency
-6. **Frontend Update** - UI reflects new blockchain state
-
----
-
-## Technology Stack
-
-### Frontend (`parkpulsefe/`)
-- **Next.js 15** - React framework with server-side rendering
-- **TypeScript** - Type-safe development
-- **@onflow/react-sdk** - Flow blockchain integration
-- **Mapbox GL** - Interactive park mapping
-- **Tailwind CSS** - Modern styling
-
-### Backend (`parkpulsebe/`)
-- **Python 3.8+** - Core backend language
-- **FastAPI** - High-performance REST API
-- **Flow Python SDK** - Blockchain interaction
-- **Google Earth Engine API** - Satellite imagery analysis
-- **PostgreSQL** - Relational database
-- **Gemini AI** - Environmental impact analysis
-
-### Blockchain
-- **Flow Blockchain** - Layer 1 blockchain (Testnet)
-- **Cadence** - Resource-oriented smart contract language
-- **Flow CLI** - Development and deployment tooling
-
----
-
-## Getting Started
-
-### Prerequisites
-- **Node.js 18+** (for frontend)
-- **Python 3.8+** (for backend)
-- **PostgreSQL** (for database)
-- **Flow CLI** ([Installation Guide](https://developers.flow.com/tools/flow-cli/install))
-
-### Quick Start
-
-#### 1. Clone Repository
-```bash
-git clone https://github.com/yourusername/ParkPulseAi.git
-cd ParkPulseAi
-```
-
-#### 2. Setup Backend
-```bash
-cd parkpulsebe
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Setup Flow wallet (interactive)
-python setup_flow_wallet.py
-
-# Create database
-createdb cityroots
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your credentials
-
-# Start backend
-python main.py
-```
-
-Backend runs at: `http://localhost:4000`
-
-#### 3. Setup Frontend
 ```bash
 cd parkpulsefe
-
-# Install dependencies
 npm install
+```
 
-# Start development server
+### 2. Configure Environment
+
+Create `.env.local` file:
+
+```env
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:4000
+
+# Mapbox
+NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
+
+# WalletConnect Project ID
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_walletconnect_project_id
+
+# Hedera Configuration
+NEXT_PUBLIC_HEDERA_NETWORK=testnet
+NEXT_PUBLIC_HEDERA_SERVICE_URL=http://localhost:5000
+
+# Hedera Contract (Deployed)
+NEXT_PUBLIC_HEDERA_CONTRACT_ID=0.0.7298075
+NEXT_PUBLIC_HEDERA_CONTRACT_ADDRESS=0.0.7298075
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_KEY=your_supabase_anon_key
+```
+
+### 3. Start Development Server
+
+```bash
 npm run dev
 ```
 
-Frontend runs at: `http://localhost:3000`
-
-### Detailed Setup
-
-For complete setup instructions including:
-- Flow wallet creation
-- Contract deployment
-- API key configuration
-- Troubleshooting
-
-See:
-- **Backend README**: [parkpulsebe/README.md](parkpulsebe/README.md)
-- **Contract Deployment**: [parkpulsebe/deploy_flow_contract.py](parkpulsebe/deploy_flow_contract.py)
+The application will be available at: `http://localhost:3000`
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-ParkPulseAi/
-├── README.md                          # This file
-│
-├── parkpulsefe/                       # Frontend (Next.js)
-│   ├── src/
-│   │   ├── app/                       # Next.js app router
-│   │   ├── components/                # React components
-│   │   └── lib/                       # Utilities & Flow config
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── parkpulsebe/                       # Backend (Python)
-│   ├── cadence/                       # Flow Cadence contracts
-│   │   ├── contracts/
-│   │   │   └── ParkPulseCommunity.cdc    # Main voting contract
-│   │   ├── transactions/              # Write operations
-│   │   │   ├── create_proposal.cdc
-│   │   │   └── vote.cdc
-│   │   └── scripts/                   # Read operations
-│   │       ├── get_all_active_proposals.cdc
-│   │       ├── get_proposal.cdc
-│   │       └── get_vote_counts.cdc
-│   │
-│   ├── main.py                        # FastAPI application
-│   ├── blockchain.py                  # Flow blockchain service
-│   ├── agent.py                       # AI analysis
-│   ├── database.py                    # PostgreSQL operations
-│   ├── deploy_flow_contract.py        # Deployment script
-│   ├── setup_flow_wallet.py           # Wallet setup wizard
-│   ├── requirements.txt               # Python dependencies
-│   ├── flow.json                      # Flow configuration
-│   ├── .env.example                   # Environment template
-│   └── README.md                      # Backend documentation
-│
-└── .gitignore
+parkpulsefe/
+├── app/                      # Next.js App Router
+│   ├── layout.tsx           # Root layout
+│   ├── page.tsx             # Home page
+│   ├── proposals/           # Proposal pages
+│   ├── create/              # Create proposal
+│   └── dashboard/           # User dashboard
+├── components/              # React components
+│   ├── Map/                 # Mapbox components
+│   ├── Proposal/            # Proposal cards & details
+│   ├── Vote/                # Voting interface
+│   └── ui/                  # Reusable UI components
+├── lib/                     # Utility functions
+│   ├── hedera.ts           # Hedera SDK config
+│   └── api.ts              # API client
+├── types/                   # TypeScript types
+├── public/                  # Static assets
+├── .env.local              # Environment variables
+└── package.json
 ```
 
 ---
 
-## Demo & Resources
+## 🔌 Backend Integration
 
-### Video Demo
-[Coming Soon - Link to demo video]
+### Hedera Service (Port 5000)
 
-### Live Demo
-[Coming Soon - Link to deployed application]
+The frontend communicates with the Hedera service for blockchain operations:
 
-### GitHub Repository
-[https://github.com/yourusername/ParkPulseAi](https://github.com/yourusername/ParkPulseAi)
+```typescript
+// Get contract info
+const response = await fetch(`${HEDERA_SERVICE_URL}/api/contract/info`);
 
-### Flow Resources
-- **Contract on FlowScan**: [View Contract](https://testnet.flowscan.io/contract/A.d63bdc807b56f6a5.ParkPulseCommunity)
-- **Flow Documentation**: [https://developers.flow.com/](https://developers.flow.com/)
-- **Cadence Language**: [https://cadence-lang.org/](https://cadence-lang.org/)
+// Create proposal
+await fetch(`${HEDERA_SERVICE_URL}/api/contract/create-proposal`, {
+  method: 'POST',
+  body: JSON.stringify(proposalData)
+});
 
-### API Documentation
-- **Backend API Docs**: `http://localhost:4000/docs` (when running)
-- **Interactive API**: `http://localhost:4000/redoc`
-
----
-
-## API Endpoints
-
-### Blockchain Endpoints
-
-#### Get Contract Information
-```bash
-GET /api/contract-info
-```
-Returns Flow contract details and network information.
-
-#### Get All Proposals
-```bash
-GET /api/proposals
-```
-Returns all active proposals from Flow blockchain.
-
-#### Get Specific Proposal
-```bash
-GET /api/proposals/{id}
-```
-Returns detailed proposal information including votes and impact data.
-
-### Application Endpoints
-
-#### Create Proposal with AI Analysis
-```bash
-POST /api/analyze
-Content-Type: application/json
-
-{
-  "parkId": "park_001",
-  "parkName": "Central Park",
-  "location": {
-    "lat": 40.7829,
-    "lng": -73.9654
-  }
-}
+// Submit vote
+await fetch(`${HEDERA_SERVICE_URL}/api/contract/vote`, {
+  method: 'POST',
+  body: JSON.stringify({ proposalId, vote, voter })
+});
 ```
 
-#### Query AI Agent
-```bash
-POST /api/agent
-Content-Type: application/json
+### Python Backend (Port 4000)
 
-{
-  "query": "Show me parks in Manhattan"
-}
-```
+Environmental analysis and park data:
 
-#### Calculate NDVI
-```bash
-POST /api/ndvi
-Content-Type: application/json
+```typescript
+// Get parks
+const parks = await fetch(`${API_URL}/api/parks`);
 
-{
-  "location": {
-    "lat": 40.7829,
-    "lng": -73.9654
-  },
-  "startDate": "2024-01-01",
-  "endDate": "2024-12-31"
-}
+// Analyze park impact
+const analysis = await fetch(`${API_URL}/api/analyze`, {
+  method: 'POST',
+  body: JSON.stringify({ parkId, location })
+});
 ```
 
 ---
 
-## Smart Contract Functions
+## 🗺️ Features & Pages
 
-### Transactions (Write Operations)
+### Home Page (`/`)
+- Featured parks at risk
+- Active proposals overview
+- Platform statistics
+- Call-to-action for engagement
 
-#### Create Proposal
-```cadence
-createProposal(
-    parkName: String,
-    parkId: String,
-    description: String,
-    endDate: UFix64,
-    environmentalData: EnvironmentalData,
-    demographics: Demographics,
-    creator: Address
-)
+### Proposals (`/proposals`)
+- Browse all proposals
+- Filter by status (Active, Accepted, Rejected)
+- View environmental impact data
+- Real-time vote counts
+
+### Create Proposal (`/create`)
+- Interactive map for park selection
+- AI-powered environmental analysis
+- Demographic impact assessment
+- Smart contract integration
+
+### Proposal Details (`/proposals/[id]`)
+- Full proposal information
+- Environmental metrics (NDVI, PM2.5)
+- Demographics breakdown
+- Voting interface
+- Funding progress (if accepted)
+
+### Dashboard (`/dashboard`)
+- User's voting history
+- Created proposals
+- Donation tracking
+- Community impact stats
+
+---
+
+## 🎨 Key Components
+
+### MapView Component
+```typescript
+import MapView from '@/components/Map/MapView';
+
+<MapView
+  parks={parks}
+  onParkSelect={handleParkSelect}
+  center={[lat, lng]}
+/>
 ```
 
-#### Vote on Proposal
-```cadence
-vote(
-    proposalId: UInt64,
-    vote: Bool,
-    voter: Address
-)
+### ProposalCard Component
+```typescript
+import ProposalCard from '@/components/Proposal/ProposalCard';
+
+<ProposalCard
+  proposal={proposal}
+  onVote={handleVote}
+  showVoteButton={true}
+/>
 ```
 
-### Scripts (Read Operations)
+### VoteButton Component
+```typescript
+import VoteButton from '@/components/Vote/VoteButton';
 
-#### Get All Active Proposals
-```cadence
-getActiveProposals(): [Proposal]
-```
-
-#### Get Proposal by ID
-```cadence
-getProposal(proposalId: UInt64): Proposal?
-```
-
-#### Get Vote Counts
-```cadence
-getVoteCounts(proposalId: UInt64): {String: UInt64}
+<VoteButton
+  proposalId={proposalId}
+  onVoteSuccess={handleSuccess}
+  disabled={hasVoted}
+/>
 ```
 
 ---
 
-## Contributing
+## 🔐 Wallet Integration
 
-We welcome contributions to ParkPulse.ai! Here's how you can help:
+### Supported Wallets
+- MetaMask
+- WalletConnect (mobile wallets)
+- Hedera HashPack (coming soon)
 
-### Areas for Contribution
-- Frontend UI/UX improvements
-- Additional Cadence smart contract features
-- Environmental analysis enhancements
-- Documentation improvements
-- Bug fixes and testing
+### Connect Wallet Example
+```typescript
+import { useWallet } from '@/hooks/useWallet';
 
-### Development Process
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Test thoroughly (testnet deployment)
-5. Commit with clear messages
-6. Push to your fork
-7. Open a Pull Request
+const { connect, address, isConnected } = useWallet();
 
-### Testing
+<button onClick={connect}>
+  {isConnected ? address : 'Connect Wallet'}
+</button>
+```
+
+---
+
+## 📊 State Management
+
+### Environment Variables
+Access via `process.env.NEXT_PUBLIC_*`:
+```typescript
+const contractId = process.env.NEXT_PUBLIC_HEDERA_CONTRACT_ID;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+```
+
+### React Hooks
+- `useWallet()` - Wallet connection & state
+- `useProposals()` - Fetch and manage proposals
+- `useVote()` - Handle voting logic
+- `useContract()` - Contract interactions
+
+---
+
+## 🧪 Testing
+
 ```bash
-# Backend tests
-cd parkpulsebe
-pytest
-
-# Frontend tests
-cd parkpulsefe
+# Run tests
 npm test
 
-# Flow contract tests
-flow test parkpulsebe/cadence/tests/
+# Run tests in watch mode
+npm test:watch
+
+# E2E tests
+npm run test:e2e
 ```
 
 ---
 
-## Roadmap
+## 🏗️ Build & Deploy
 
-### Phase 1: MVP (Current)
-- [x] Flow testnet deployment
-- [x] Basic voting functionality
-- [x] Environmental impact analysis
-- [x] Web interface
+### Development Build
+```bash
+npm run dev
+```
 
-### Phase 2: Enhanced Features
-- [ ] Mobile app (iOS/Android)
-- [ ] Multi-language support
-- [ ] Advanced AI predictions
-- [ ] Integration with city APIs
+### Production Build
+```bash
+npm run build
+npm start
+```
 
-### Phase 3: Mainnet & Scale
-- [ ] Flow mainnet deployment
-- [ ] Multi-city expansion
-- [ ] DAO governance features
-- [ ] Token rewards for participation
-
-### Phase 4: Ecosystem
-- [ ] Partner with environmental NGOs
-- [ ] Government integration
-- [ ] Open data platform
-- [ ] Research partnerships
+### Lint & Format
+```bash
+npm run lint
+npm run format
+```
 
 ---
 
-## Security
+## 🌐 Deployment
 
-### Auditing
-- Smart contract code is open-source for community review
-- Currently deployed on testnet for testing
-- Will undergo professional audit before mainnet deployment
+### Vercel (Recommended)
+1. Push code to GitHub
+2. Import project in Vercel
+3. Configure environment variables
+4. Deploy
 
-### Reporting Vulnerabilities
-If you discover a security issue, please email: security@parkpulse.ai
-
-### Best Practices
-- Never commit private keys
-- Use environment variables for sensitive data
-- Test thoroughly on testnet before mainnet
-- Validate all user inputs
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Environment Variables for Production
+Ensure all `NEXT_PUBLIC_*` variables are set in your deployment platform:
+- Hedera contract ID
+- API URLs (production endpoints)
+- Mapbox token
+- Supabase credentials
 
 ---
 
-Made with ❤️ for parks, communities, and the environment.
+## 🔄 API Integration Flow
 
-**#BuildOnFlow #FlowBlockchain #Web3ForGood**
+1. **User Action**: Select park on map
+2. **Frontend Request**: POST to `/api/analyze`
+3. **AI Analysis**: Environmental impact calculated
+4. **Proposal Creation**: POST to Hedera service
+5. **Smart Contract**: Transaction submitted to blockchain
+6. **Confirmation**: Proposal ID returned
+7. **UI Update**: Display new proposal
+
+---
+
+## 🐛 Troubleshooting
+
+### Contract Not Found
+- Verify `NEXT_PUBLIC_HEDERA_CONTRACT_ID` matches deployed contract
+- Ensure Hedera service is running
+- Check network (testnet/mainnet)
+
+### Wallet Connection Issues
+- Ensure WalletConnect Project ID is valid
+- Check wallet network matches Hedera testnet (chainId: 296)
+- Clear browser cache and reconnect
+
+### Map Not Loading
+- Verify Mapbox token is valid
+- Check API quotas
+- Ensure public access token has correct scopes
+
+### API Errors
+- Confirm backend services are running (ports 4000 & 5000)
+- Check CORS configuration
+- Verify API URLs in `.env.local`
+
+---
+
+## 📚 Additional Resources
+
+### Documentation
+- **Next.js**: https://nextjs.org/docs
+- **Hedera**: https://docs.hedera.com/
+- **Mapbox**: https://docs.mapbox.com/
+- **Tailwind CSS**: https://tailwindcss.com/docs
+
+### Explorer & Tools
+- **HashScan**: https://hashscan.io/testnet/contract/0.0.7298075
+- **Hedera Portal**: https://portal.hedera.com/
+- **Supabase Dashboard**: Your Supabase project URL
+
+---
+
+## 🔒 Security
+
+- All sensitive keys are environment variables
+- Private keys never exposed to frontend
+- API requests validated server-side
+- Smart contract audited for vulnerabilities
+- CORS properly configured
+
+---
+
+Made with ❤️ for parks, communities, and the environment
+
+**#BuildOnHedera #Web3ForGood**
