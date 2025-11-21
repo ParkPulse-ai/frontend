@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Send, Loader2, Sparkles } from 'lucide-react';
 
 interface ChatInputProps {
@@ -10,9 +10,26 @@ interface ChatInputProps {
   showSuggestions?: boolean;
 }
 
-export default function ChatInput({ onSendMessage, disabled, isLoading, showSuggestions = true }: ChatInputProps) {
+export interface ChatInputRef {
+  focus: () => void;
+}
+
+const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessage, disabled, isLoading, showSuggestions = true }, ref) => {
   const [input, setInput] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.focus();
+        // Ensure cursor is at the end
+        const length = textarea.value.length;
+        textarea.setSelectionRange(length, length);
+      }
+    }
+  }));
 
   const handleSend = () => {
     if (input.trim() && !disabled) {
@@ -39,6 +56,7 @@ export default function ChatInput({ onSendMessage, disabled, isLoading, showSugg
       <div className="flex gap-3">
         <div className="flex-1 relative">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
@@ -102,4 +120,8 @@ export default function ChatInput({ onSendMessage, disabled, isLoading, showSugg
       </div>
     </div>
   );
-}
+});
+
+ChatInput.displayName = 'ChatInput';
+
+export default ChatInput;

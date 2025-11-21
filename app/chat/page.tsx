@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import ChatMessage from '@/components/ChatMessage';
-import ChatInput from '@/components/ChatInput';
+import ChatInput, { ChatInputRef } from '@/components/ChatInput';
 import CustomCursor from '@/components/CustomCursor';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import WalletStatus from '@/components/WalletStatus';
@@ -42,8 +42,10 @@ export default function Home() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [hcsTopicId, setHcsTopicId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showRemovalImpact, setShowRemovalImpact] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatSectionRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<ChatInputRef>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,38 +55,46 @@ export default function Home() {
     scrollToBottom();
   }, [messages]);
 
-  // Focus trap for chat section
+  // Auto-focus input after loading completes
   useEffect(() => {
-    const chatSection = chatSectionRef.current;
-    if (!chatSection) return;
+    if (!isLoading && messages.length > 1) {
+      const focusInput = () => {
+        const textarea = document.querySelector('textarea[aria-label="Chat input"]') as HTMLTextAreaElement;
+        if (textarea && !textarea.disabled) {
+          // Blur any currently focused element first
+          if (document.activeElement && document.activeElement !== textarea) {
+            (document.activeElement as HTMLElement).blur();
+          }
 
-    const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
+          // Focus the textarea
+          textarea.focus({ preventScroll: true });
 
-      const focusableElements = chatSection.querySelectorAll(
-        'button:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+          // Dispatch focus and click events manually
+          const focusEvent = new FocusEvent('focus', { bubbles: true });
+          textarea.dispatchEvent(focusEvent);
 
-      if (e.shiftKey) {
-        // Shift+Tab: moving backwards
-        if (document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement?.focus();
+          const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+          textarea.dispatchEvent(mousedownEvent);
+
+          const mouseupEvent = new MouseEvent('mouseup', { bubbles: true, cancelable: true });
+          textarea.dispatchEvent(mouseupEvent);
+
+          const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+          textarea.dispatchEvent(clickEvent);
+
+          // Set selection to end
+          const length = textarea.value.length;
+          textarea.setSelectionRange(length, length);
         }
-      } else {
-        // Tab: moving forwards
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement?.focus();
-        }
-      }
-    };
+      };
 
-    document.addEventListener('keydown', handleTabKey);
-    return () => document.removeEventListener('keydown', handleTabKey);
-  }, []);
+      // Try with increasing delays
+      setTimeout(focusInput, 0);
+      setTimeout(focusInput, 100);
+      setTimeout(focusInput, 200);
+    }
+  }, [isLoading, messages.length]);
+
 
   const handleSendMessage = async (messageText: string) => {
     const userMessage: Message = {
@@ -131,6 +141,10 @@ export default function Home() {
         setParks(response.data.featureCollection);
         setSelectedParkId(null);
         setSelectedParkName(null);
+        setShowRemovalImpact(false);
+      } else if (response.action === 'removal_impact') {
+        console.log('Park removal impact data received');
+        setShowRemovalImpact(true);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -202,6 +216,7 @@ export default function Home() {
               parks={parks}
               onParkClick={handleParkClick}
               selectedParkId={selectedParkId}
+              showRemovalImpact={showRemovalImpact}
             />
           </div>
         </div>
@@ -261,6 +276,7 @@ export default function Home() {
           </div>
 
           <ChatInput
+            ref={chatInputRef}
             onSendMessage={handleSendMessage}
             disabled={isLoading}
             isLoading={isLoading}
