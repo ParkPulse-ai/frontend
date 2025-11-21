@@ -2,16 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Mail, MapPin, Shield, Save, Navigation, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Mail, MapPin, Shield, Save, Navigation, Loader2, Wallet, DollarSign } from 'lucide-react';
 import WalletStatus from '@/components/WalletStatus';
 import CustomCursor from '@/components/CustomCursor';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useHedera } from '@/components/HederaProvider';
 import { getUserProfile, saveUserProfile } from '@/lib/supabase';
 
+type Tab = 'profile' | 'wallet';
+
 export default function ProfilePage() {
   const router = useRouter();
   const { address } = useHedera();
+  const [activeTab, setActiveTab] = useState<Tab>('profile');
+  const [balances, setBalances] = useState({
+    hbar: 0,
+    usdc: 0,
+    park: 0
+  });
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -41,7 +50,36 @@ export default function ProfilePage() {
 
   useEffect(() => {
     loadProfile();
-  }, [address]);
+    if (activeTab === 'wallet' && address) {
+      fetchBalances();
+    }
+  }, [address, activeTab]);
+
+  async function fetchBalances() {
+    if (!address) return;
+
+    try {
+      setIsLoadingBalances(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/user-balances?accountId=${address}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch balances');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setBalances({
+          hbar: data.balances.hbar || 0,
+          usdc: data.balances.usdc || 0,
+          park: data.balances.park || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching balances:', error);
+    } finally {
+      setIsLoadingBalances(false);
+    }
+  }
 
   async function loadProfile() {
     if (!address) {
@@ -272,16 +310,57 @@ export default function ProfilePage() {
               <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-b border-emerald-500/20 px-8 py-6">
                 <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
                   <div className="p-2 bg-emerald-500/20 rounded-lg">
-                    <User className="text-emerald-400" size={28} />
+                    {activeTab === 'profile' ? (
+                      <User className="text-emerald-400" size={28} />
+                    ) : (
+                      <Wallet className="text-emerald-400" size={28} />
+                    )}
                   </div>
-                  Profile Settings
+                  {activeTab === 'profile' ? 'Profile Settings' : 'My Wallet'}
                 </h1>
                 <p className="text-gray-400 text-sm">
-                  Manage your personal information and account preferences
+                  {activeTab === 'profile'
+                    ? 'Manage your personal information and account preferences'
+                    : 'View your token balances and wallet information'
+                  }
                 </p>
               </div>
 
+              {/* Tabs */}
+              <div className="border-b border-emerald-500/20 px-8">
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => setActiveTab('profile')}
+                    className={`px-6 py-3 text-sm font-semibold transition-all border-b-2 ${
+                      activeTab === 'profile'
+                        ? 'text-emerald-400 border-emerald-400'
+                        : 'text-gray-400 border-transparent hover:text-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <User size={16} />
+                      Profile
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('wallet')}
+                    className={`px-6 py-3 text-sm font-semibold transition-all border-b-2 ${
+                      activeTab === 'wallet'
+                        ? 'text-emerald-400 border-emerald-400'
+                        : 'text-gray-400 border-transparent hover:text-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Wallet size={16} />
+                      Wallet
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <div className="px-8 py-6 space-y-6">
+                {activeTab === 'profile' ? (
+                  <>
                 {/* Wallet Address Section */}
                 <div>
                   <h2 className="text-sm font-semibold text-emerald-400 mb-3 uppercase tracking-wide">
@@ -594,6 +673,109 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </div>
+                </>
+                ) : (
+                  /* Wallet Tab */
+                  <>
+                    {/* Wallet Address */}
+                    <div>
+                      <h2 className="text-sm font-semibold text-emerald-400 mb-3 uppercase tracking-wide">
+                        Wallet Address
+                      </h2>
+                      <div className="px-4 py-3 bg-slate-800/70 border border-emerald-500/30 rounded-lg text-gray-300 font-mono text-sm break-all">
+                        {address}
+                      </div>
+                    </div>
+
+                    {/* Token Balances */}
+                    <div className="border-t border-emerald-500/20 pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide">
+                          Token Balances
+                        </h2>
+                        <button
+                          onClick={fetchBalances}
+                          disabled={isLoadingBalances}
+                          className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+                        >
+                          {isLoadingBalances ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              Refreshing...
+                            </div>
+                          ) : (
+                            'Refresh Balances'
+                          )}
+                        </button>
+                      </div>
+
+                      {isLoadingBalances && balances.hbar === 0 ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* HBAR Balance */}
+                          <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/10 border border-purple-500/30 rounded-xl p-6">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-gray-400 text-sm font-medium">HBAR</span>
+                              <div className="p-2 bg-purple-500/20 rounded-lg">
+                                <DollarSign className="text-purple-400" size={20} />
+                              </div>
+                            </div>
+                            <div className="text-3xl font-bold text-white mb-1">
+                              {balances.hbar.toFixed(2)}
+                            </div>
+                            <div className="text-xs text-gray-500">Hedera Hashgraph</div>
+                          </div>
+
+                          {/* USDC Balance */}
+                          <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-500/30 rounded-xl p-6">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-gray-400 text-sm font-medium">USDC</span>
+                              <div className="p-2 bg-blue-500/20 rounded-lg">
+                                <DollarSign className="text-blue-400" size={20} />
+                              </div>
+                            </div>
+                            <div className="text-3xl font-bold text-white mb-1">
+                              {balances.usdc.toFixed(2)}
+                            </div>
+                            <div className="text-xs text-gray-500">USD Coin</div>
+                          </div>
+
+                          {/* PARK Balance */}
+                          <div className="bg-gradient-to-br from-emerald-900/20 to-emerald-800/10 border border-emerald-500/30 rounded-xl p-6 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                            <div className="relative">
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="text-gray-400 text-sm font-medium">PARK</span>
+                                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                                  <span className="text-emerald-400 text-xl">🌳</span>
+                                </div>
+                              </div>
+                              <div className="text-3xl font-bold text-white mb-1">
+                                {balances.park.toFixed(2)}
+                              </div>
+                              <div className="text-xs text-gray-500">Voting Rewards</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Info Message */}
+                      <div className="mt-6 p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg">
+                        <p className="text-sm text-blue-300 flex items-start gap-2">
+                          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>
+                            <strong>Earn PARK tokens</strong> by voting on proposals! Each vote rewards you with 5 PARK tokens.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
