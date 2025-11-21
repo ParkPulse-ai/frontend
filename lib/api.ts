@@ -73,3 +73,23 @@ export async function getDonationProgress(proposalId: number) {
 
   return response.json();
 }
+
+/**
+ * Send PARK tokens to a user
+ */
+export async function sendParkTokensToUser(recipientAccountId: string) {
+  const response = await fetch(`${API_URL}/api/send-park-tokens`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ recipientAccountId }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to send PARK tokens');
+  }
+
+  return response.json();
+}
+

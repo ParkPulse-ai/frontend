@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, ThumbsUp, ThumbsDown, Clock, CheckCircle2, XCircle, X, Loader2, TrendingDown, Users, Leaf, DollarSign, Target, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useHedera } from '@/components/HederaProvider';
-import { getProposals, getProposalDetails, getDonationProgress } from '@/lib/api';
+import { getProposals, getProposalDetails, getDonationProgress, sendParkTokensToUser } from '@/lib/api';
 import { voteOnProposal, hasUserVoted, donateToProposal } from '@/lib/hedera-wallets';
 import CustomCursor from '@/components/CustomCursor';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -153,6 +153,22 @@ export default function ProposalPage() {
       const txId = await voteOnProposal(selectedProposal.id, vote);
 
       console.log('Vote transaction successful:', txId);
+
+      // Send PARK tokens as reward
+      if (address) {
+        try {
+          console.log(`Sending 5 PARK tokens to voter: ${address}`);
+          const tokenResult = await sendParkTokensToUser(address);
+
+          if (tokenResult.success) {
+            console.log('✅ PARK tokens sent successfully!', tokenResult.transactionId);
+          } else {
+            console.warn('⚠️ Token transfer failed:', tokenResult.error);
+          }
+        } catch (tokenError) {
+          console.error('Error sending PARK tokens (non-critical):', tokenError);
+        }
+      }
 
       // Show success notification
       setTransactionId(txId);

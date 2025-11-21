@@ -726,7 +726,7 @@ export default function ProfilePage() {
                             <div className="text-3xl font-bold text-white mb-1">
                               {balances.hbar.toFixed(2)}
                             </div>
-                            <div className="text-xs text-gray-500">Hedera Hashgraph</div>
+                            <div className="text-xs text-gray-500">Hedera</div>
                           </div>
 
                           {/* USDC Balance */}
@@ -769,7 +769,7 @@ export default function ProfilePage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <span>
-                            <strong>Earn PARK tokens</strong> by voting on proposals! Each vote rewards you with 5 PARK tokens.
+                            <strong>Earn PARK tokens</strong> by voting on proposals!
                           </span>
                         </p>
                       </div>
